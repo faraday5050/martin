@@ -28,9 +28,18 @@ initDb().then(async () => {
 });
 
 // Health check
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  let dbStatus = "unknown";
+  try {
+    await query("SELECT 1");
+    dbStatus = "connected";
+  } catch (e) {
+    dbStatus = "error: " + (e instanceof Error ? e.message : String(e));
+  }
+
   res.json({ 
     status: "ok", 
+    db: dbStatus,
     timestamp: new Date().toISOString(), 
     isVercel: process.env.VERCEL === '1'
   });

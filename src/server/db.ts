@@ -9,27 +9,60 @@ export interface QueryResult {
   lastInsertRowid: number | string | null;
 }
 
+let sqliteDb: any = null;
+
+const getSqliteDb = async () => {
+  if (sqliteDb) return sqliteDb;
+  
+  try {
+    const BetterSqlite3 = await import("better-sqlite3");
+    const Database = BetterSqlite3.default || BetterSqlite3;
+    
+    // Try current directory first, then fallback to /tmp if needed
+    let dbPath = path.join(process.cwd(), "quench_mart.db");
+    
+    try {
+      console.log("Attempting to initialize SQLite database at:", dbPath);
+      sqliteDb = new (Database as any)(dbPath);
+    } catch (e) {
+      console.warn("Failed to create database in current directory, trying /tmp:", e);
+      dbPath = path.join("/tmp", "quench_mart.db");
+      console.log("Attempting to initialize SQLite database at:", dbPath);
+      sqliteDb = new (Database as any)(dbPath);
+    }
+    
+    // Enable WAL mode for better performance and concurrency
+    sqliteDb.pragma('journal_mode = WAL');
+    return sqliteDb;
+  } catch (error) {
+    console.error("CRITICAL: Failed to initialize SQLite database module:", error);
+    throw error;
+  }
+};
+
 export const query = async (text: string, params: any[] = []): Promise<QueryResult> => {
   if (isVercel && hasPostgres) {
     // Vercel Postgres
-    // Replace ? with $1, $2, etc.
-    const pgText = text.replace(/\?/g, (_, i) => `$${i + 1}`);
-    const result = await sql.query(pgText, params);
+    // Replace ? with $1, $2, etc. correctly using a counter
+    let count = 0;
+    const pgText = text.replace(/\?/g, () => `$${++count}`);
     
-    // For INSERTs, we try to get the ID from the first row if RETURNING was used
-    const lastInsertRowid = (result as any).rows?.[0]?.id || null;
-    
-    return {
-      rows: result.rows,
-      lastInsertRowid
-    };
+    try {
+      const result = await sql.query(pgText, params);
+      // For INSERTs, we try to get the ID from the first row if RETURNING was used
+      const lastInsertRowid = (result as any).rows?.[0]?.id || null;
+      
+      return {
+        rows: result.rows,
+        lastInsertRowid
+      };
+    } catch (error) {
+      console.error("Postgres query error:", error, "Query:", pgText, "Params:", params);
+      throw error;
+    }
   } else {
     // Local SQLite
-    const BetterSqlite3 = await import("better-sqlite3");
-    const Database = BetterSqlite3.default || BetterSqlite3;
-    const dbPath = path.join(process.cwd(), "quench_mart.db");
-    console.log("Opening SQLite database at:", dbPath);
-    const localDb = new (Database as any)(dbPath);
+    const localDb = await getSqliteDb();
     
     try {
       if (text.trim().toUpperCase().startsWith("SELECT") || text.trim().toUpperCase().startsWith("PRAGMA")) {
@@ -46,10 +79,8 @@ export const query = async (text: string, params: any[] = []): Promise<QueryResu
         return { rows: [], lastInsertRowid: result.lastInsertRowid };
       }
     } catch (error) {
-      console.error("Database query error:", error, "Query:", text, "Params:", params);
+      console.error("SQLite query error:", error, "Query:", text, "Params:", params);
       throw error;
-    } finally {
-      localDb.close();
     }
   }
 };
@@ -61,14 +92,12 @@ export const exec = async (text: string): Promise<void> => {
       await sql.query(s);
     }
   } else {
-    const BetterSqlite3 = await import("better-sqlite3");
-    const Database = BetterSqlite3.default || BetterSqlite3;
-    const dbPath = path.join(process.cwd(), "quench_mart.db");
-    const localDb = new (Database as any)(dbPath);
+    const localDb = await getSqliteDb();
     try {
       localDb.exec(text);
-    } finally {
-      localDb.close();
+    } catch (error) {
+      console.error("SQLite exec error:", error, "SQL:", text);
+      throw error;
     }
   }
 };
