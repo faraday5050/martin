@@ -96,27 +96,11 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout, onDownloadR
             <>
               <button 
                 onClick={onDownloadReport}
-                className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl text-xs font-bold transition-all mb-2"
+                className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl text-xs font-bold transition-all"
               >
                 <Download size={14} /> Download CSV
               </button>
-              <button 
-                onClick={onLogout}
-                className="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 py-3 rounded-xl text-xs font-bold transition-all"
-              >
-                <LogOut size={14} /> Sign Out
-              </button>
             </>
-          )}
-          
-          {!isOpen && (
-            <button 
-              onClick={onLogout}
-              className="mt-4 text-red-400 hover:text-red-300 p-2 rounded-xl hover:bg-red-400/10 transition-all"
-              title="Sign Out"
-            >
-              <LogOut size={18} />
-            </button>
           )}
         </div>
       </div>

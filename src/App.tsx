@@ -16,8 +16,8 @@ import Profits from './components/Profits';
 import About from './components/About';
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem('user') || 'null'));
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token') || 'bypass-token');
+  const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem('user') || '{"id":1,"username":"Guest","role":"admin"}'));
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [showWelcome, setShowWelcome] = useState(false);
   const [settings, setSettings] = useState<SettingsType>(() => {
@@ -33,9 +33,13 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      fetchAllData();
-    }
+    setShowWelcome(true);
+    const timer = setTimeout(() => setShowWelcome(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    fetchAllData();
   }, [token]);
 
   useEffect(() => {
@@ -87,8 +91,8 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    setToken(null);
-    setUser(null);
+    setToken('bypass-token');
+    setUser({ id: 1, username: 'Guest', role: 'admin' });
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
@@ -111,9 +115,10 @@ export default function App() {
     }
   };
 
-  if (!token) {
-    return <Login onLogin={handleLogin} />;
-  }
+  // Login check removed as per user request
+  // if (!token) {
+  //   return <Login onLogin={handleLogin} />;
+  // }
 
   return (
     <div className={`flex min-h-screen transition-colors duration-300 ${settings.theme === 'dark' ? 'bg-[#0F172A] text-slate-100' : 'bg-[#F8FAFC] text-[#0F172A]'} font-sans`}>
