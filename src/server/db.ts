@@ -1,8 +1,8 @@
 import { sql } from "@vercel/postgres";
 import path from "path";
 
-const isVercel = process.env.VERCEL === '1';
-const hasPostgres = !!process.env.POSTGRES_URL;
+const hasPostgres = True;
+
 
 export interface QueryResult {
   rows: any[];
@@ -11,34 +11,7 @@ export interface QueryResult {
 
 let sqliteDb: any = null;
 
-const getSqliteDb = async () => {
-  if (sqliteDb) return sqliteDb;
-  
-  try {
-    const BetterSqlite3 = await import("better-sqlite3");
-    const Database = BetterSqlite3.default || BetterSqlite3;
-    
-    // Try current directory first, then fallback to /tmp if needed
-    let dbPath = path.join(process.cwd(), "quench_mart.db");
-    
-    try {
-      console.log("Attempting to initialize SQLite database at:", dbPath);
-      sqliteDb = new (Database as any)(dbPath);
-    } catch (e) {
-      console.warn("Failed to create database in current directory, trying /tmp:", e);
-      dbPath = path.join("/tmp", "quench_mart.db");
-      console.log("Attempting to initialize SQLite database at:", dbPath);
-      sqliteDb = new (Database as any)(dbPath);
-    }
-    
-    // Enable WAL mode for better performance and concurrency
-    sqliteDb.pragma('journal_mode = WAL');
-    return sqliteDb;
-  } catch (error) {
-    console.error("CRITICAL: Failed to initialize SQLite database module:", error);
-    throw error;
-  }
-};
+
 
 export const query = async (text: string, params: any[] = []): Promise<QueryResult> => {
   if (isVercel && hasPostgres) {
