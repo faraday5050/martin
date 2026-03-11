@@ -1,4 +1,4 @@
-import app from "./app";
+import app from "./api/app.js";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";

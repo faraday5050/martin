@@ -24,7 +24,7 @@ const query = async (text: string, params: any[] = []) => {
   } else {
     // SQLite (Local) - Dynamic import to avoid issues on Vercel
     const { default: Database } = await import("better-sqlite3");
-    const dbPath = path.join(__dirname, "quench_mart.db");
+    const dbPath = path.join(process.cwd(), "quench_mart.db");
     const localDb = new Database(dbPath);
     try {
       if (text.trim().toUpperCase().startsWith("SELECT")) {
@@ -48,7 +48,7 @@ const exec = async (text: string) => {
     }
   } else {
     const { default: Database } = await import("better-sqlite3");
-    const dbPath = path.join(__dirname, "quench_mart.db");
+    const dbPath = path.join(process.cwd(), "quench_mart.db");
     const localDb = new Database(dbPath);
     localDb.exec(text);
     localDb.close();
