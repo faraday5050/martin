@@ -45,7 +45,12 @@ export default function Dashboard({ sales, expenses, products, settings, exchang
     
     const parseDate = (d: string) => {
       try {
-        return parseISO(d.includes(' ') ? d.replace(' ', 'T') + 'Z' : d);
+        if (!d) return new Date();
+        const normalized = d.includes(' ') ? d.replace(' ', 'T') : d;
+        const withZ = normalized.includes('T') && !normalized.includes('Z') && !normalized.includes('+') 
+          ? normalized + 'Z' 
+          : normalized;
+        return parseISO(withZ);
       } catch (e) {
         return new Date(d);
       }
@@ -74,7 +79,14 @@ export default function Dashboard({ sales, expenses, products, settings, exchang
   const chartData = useMemo(() => {
     const parseDate = (d: string) => {
       try {
-        return parseISO(d.includes(' ') ? d.replace(' ', 'T') + 'Z' : d);
+        if (!d) return new Date();
+        // Handle SQLite format "YYYY-MM-DD HH:mm:ss"
+        const normalized = d.includes(' ') ? d.replace(' ', 'T') : d;
+        // If it looks like an ISO string but lacks timezone, append Z
+        const withZ = normalized.includes('T') && !normalized.includes('Z') && !normalized.includes('+') 
+          ? normalized + 'Z' 
+          : normalized;
+        return parseISO(withZ);
       } catch (e) {
         return new Date(d);
       }
@@ -84,7 +96,10 @@ export default function Dashboard({ sales, expenses, products, settings, exchang
       const date = subDays(new Date(), i);
       const dayStr = format(date, 'MMM dd');
       const daySales = sales
-        .filter(s => startOfDay(parseDate(s.timestamp)).getTime() === startOfDay(date).getTime())
+        .filter(s => {
+          const sDate = parseDate(s.timestamp);
+          return startOfDay(sDate).getTime() === startOfDay(date).getTime();
+        })
         .reduce((sum, s) => sum + s.amount, 0);
       return { name: dayStr, revenue: daySales };
     }).reverse();
@@ -194,7 +209,7 @@ export default function Dashboard({ sales, expenses, products, settings, exchang
                     contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
                     formatter={(v: any) => [formatCurrency(Number(v), settings.currency, settings.privacyMode, exchangeRate), 'Revenue']}
                   />
-                  <Bar dataKey="revenue" fill="#0F172A" radius={[6, 6, 0, 0]} barSize={40} />
+                  <Bar dataKey="revenue" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

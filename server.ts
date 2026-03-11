@@ -1,4 +1,4 @@
-import app from "./api/app.js";
+import app from "./src/server/app.js";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const PORT = 3000;
 
-  // Vite middleware
+  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -18,17 +18,15 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(__dirname, "dist");
-    console.log(`Serving static files from: ${distPath}`);
-    app.use(express.static(distPath));
+    // Serve static files in production
+    app.use(express.static(path.join(__dirname, "dist")));
     app.get("*", (req, res) => {
-      const indexPath = path.join(distPath, "index.html");
-      res.sendFile(indexPath);
+      res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Quench Mart Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 

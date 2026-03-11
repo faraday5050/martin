@@ -21,7 +21,12 @@ export default function Profits({ sales, products, settings, exchangeRate }: Pro
   const profitStats = useMemo(() => {
     const parseDate = (d: string) => {
       try {
-        return parseISO(d.includes(' ') ? d.replace(' ', 'T') + 'Z' : d);
+        if (!d) return new Date();
+        const normalized = d.includes(' ') ? d.replace(' ', 'T') : d;
+        const withZ = normalized.includes('T') && !normalized.includes('Z') && !normalized.includes('+') 
+          ? normalized + 'Z' 
+          : normalized;
+        return parseISO(withZ);
       } catch (e) {
         return new Date(d);
       }
