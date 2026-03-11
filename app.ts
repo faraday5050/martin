@@ -1,5 +1,4 @@
 import express from "express";
-import Database from "better-sqlite3";
 import { sql } from "@vercel/postgres";
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -23,7 +22,8 @@ const query = async (text: string, params: any[] = []) => {
       lastInsertRowid: (result as any).rows?.[0]?.id || null
     };
   } else {
-    // SQLite (Local)
+    // SQLite (Local) - Dynamic import to avoid issues on Vercel
+    const { default: Database } = await import("better-sqlite3");
     const dbPath = path.join(__dirname, "quench_mart.db");
     const localDb = new Database(dbPath);
     try {
@@ -42,13 +42,12 @@ const query = async (text: string, params: any[] = []) => {
 
 const exec = async (text: string) => {
   if (isVercel && process.env.POSTGRES_URL) {
-    // Split multiple statements for Postgres if necessary, but sql.query usually takes one
-    // For initialization, we'll run them one by one
     const statements = text.split(';').filter(s => s.trim());
     for (const s of statements) {
       await sql.query(s);
     }
   } else {
+    const { default: Database } = await import("better-sqlite3");
     const dbPath = path.join(__dirname, "quench_mart.db");
     const localDb = new Database(dbPath);
     localDb.exec(text);
